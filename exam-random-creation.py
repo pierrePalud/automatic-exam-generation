@@ -10,20 +10,15 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 
-def generate_one_test(df, num_questions_test):
+def generate_one_test(df, num_questions_per_level):
     list_df_questions = []
         
-    for i, diff in enumerate(df['DifficultyFromQuestioner'].unique()):    
-        if (num_questions_test % 3 == 1 and i==0) or (num_questions_test % 3 == 2 and i<=1):
-            df_quest_diff = df[df['DifficultyFromQuestioner'] == diff].sample(n=num_questions_test // 3 + 1)
-        
-        else:
-            df_quest_diff = df[df['DifficultyFromQuestioner'] == diff].sample(n=num_questions_test // 3)
-        
-        list_df_questions.append(df_quest_diff)
+    for diff_level in df['DifficultyFromQuestioner'].unique():    
+        if num_questions_per_level[diff_level] > 0:
+            df_quest_diff = df[df['DifficultyFromQuestioner'] == diff_level].sample(n=num_questions_per_level[diff_level])        
+            list_df_questions.append(df_quest_diff)
 
     df_test = pd.concat(list_df_questions)
-    df_test = df_test.sample(num_questions_test)
     return df_test
 
 
@@ -109,26 +104,30 @@ if __name__ == '__main__':
             if num_distinct_exams <= 0:
                 a = 1/0
         except:
-            print(f"{num_distinct_exams} is not a valid number. Please enter a positive integer (1, 2, 3, etc.).")
-            
-    num_questions_test = '1'
-    while not(isinstance(num_questions_test, int)) or num_questions_test <= 0 or num_questions_test > len(df) - 3:
-        num_questions_test = input('How many questions do you want per exam ? ')
-        try:
-            num_questions_test = int(num_questions_test)
-            if num_questions_test <= 0 or num_questions_test > len(df) - 3:
-                a = 1/0
-        except:
-            if num_questions_test > len(df) - 3:
-                print(f"You asked for {num_questions_test} per exam, but there are only {len(df)} questions in your question pool. Please enter a smaller number.")
-            else:
-                print(f"{num_questions_test} is not a valid number. Please enter a positive integer (15, 30, etc.).")
+            print(f"{num_distinct_exams} is not a valid number. Please enter a strictly positive integer (1, 2, 3, etc.).")
     
-        
+    num_questions_per_level = {}
+    for diff_level in df['DifficultyFromQuestioner'].unique():
+        num_questions_test = '1'
+        num_pool = len(df.loc[df['DifficultyFromQuestioner'] == diff_level])
+                       
+        while not(isinstance(num_questions_test, int)) or num_questions_test < 0 or num_questions_test > num_pool:
+            num_questions_test = input(f'How many {diff_level.upper()} questions do you want per exam ? (max possible : {num_pool}) ')
+            try:
+                num_questions_test = int(num_questions_test)
+                if num_questions_test < 0 or num_questions_test > num_pool:
+                    a = 1/0
+            except:
+                if num_questions_test > num_pool:
+                    print(f"You asked for {num_questions_test} per exam, but there are only {num_pool} {diff_level.upper()} questions in your question pool. Please enter a smaller number.")
+                else:
+                    print(f"{num_questions_test} is not a valid number. Please enter a positive integer (0, 1, 10, 30, etc.).")
 
+        num_questions_per_level[diff_level] = num_questions_test
+    
     
     for id_test in range(1, num_distinct_exams+1):
-        df_test = generate_one_test(df, num_questions_test)
+        df_test = generate_one_test(df, num_questions_per_level)
         create_word_doc(df_test, id_test, exam_title, exam_version=True)
         create_word_doc(df_test, id_test, exam_title, exam_version=False)
         

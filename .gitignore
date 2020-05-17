@@ -1,3 +1,7 @@
+corrections/*
+questions/*
+students_exam/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
