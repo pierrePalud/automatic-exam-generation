@@ -90,48 +90,54 @@ def read_question_pool():
     
     
 if __name__ == '__main__':
-    df = read_question_pool()
-        
-    exam_title = input('What title do you want for the exam ? (ex: Marketing Quiz 1) ')
-    while len(exam_title) == 0:
-        exam_title = input('Please enter a title (ex: Marketing Quiz 1) ')
-    
-    num_distinct_exams = '1'
-    while not(isinstance(num_distinct_exams, int)) or num_distinct_exams <= 0:
-        num_distinct_exams = input('How many distinct exams do you want ? ')
-        try:
-            num_distinct_exams = int(num_distinct_exams)
-            if num_distinct_exams <= 0:
-                a = 1/0
-        except:
-            print(f"{num_distinct_exams} is not a valid number. Please enter a strictly positive integer (1, 2, 3, etc.).")
-    
-    num_questions_per_level = {}
-    for diff_level in df['DifficultyFromQuestioner'].unique():
-        num_questions_test = '1'
-        num_pool = len(df.loc[df['DifficultyFromQuestioner'] == diff_level])
-                       
-        while not(isinstance(num_questions_test, int)) or num_questions_test < 0 or num_questions_test > num_pool:
-            num_questions_test = input(f'How many {diff_level.upper()} questions do you want per exam ? (max possible : {num_pool}) ')
-            try:
-                num_questions_test = int(num_questions_test)
-                if num_questions_test < 0 or num_questions_test > num_pool:
-                    a = 1/0
-            except:
-                if num_questions_test > num_pool:
-                    print(f"You asked for {num_questions_test} per exam, but there are only {num_pool} {diff_level.upper()} questions in your question pool. Please enter a smaller number.")
-                else:
-                    print(f"{num_questions_test} is not a valid number. Please enter a positive integer (0, 1, 10, 30, etc.).")
+	try:
+	    df = read_question_pool()
+	    valid = True
+	except:
+		k = input("The questions_pool.xlsx has not been found. Put it in the same folder as this exe file. Press any key to exit.")
+		valid = False
 
-        num_questions_per_level[diff_level] = num_questions_test
-    
-    
-    for id_test in range(1, num_distinct_exams+1):
-        df_test = generate_one_test(df, num_questions_per_level)
-        create_word_doc(df_test, id_test, exam_title, exam_version=True)
-        create_word_doc(df_test, id_test, exam_title, exam_version=False)
-        
-        for idx_test, idx_df in enumerate(df_test.index): 
-            df.at[idx_df, f'test_{id_test}'] = idx_test+1
-            
-    save_pool_with_exams(df)
+	if valid:
+		exam_title = input('What title do you want for the exam ? (ex: Marketing Quiz 1) ')
+		while len(exam_title) == 0:
+			exam_title = input('Please enter a title (ex: Marketing Quiz 1) ')
+	    
+		num_distinct_exams = '1'
+		while not(isinstance(num_distinct_exams, int)) or num_distinct_exams <= 0:
+			num_distinct_exams = input('How many distinct exams do you want ? ')
+			try:
+				num_distinct_exams = int(num_distinct_exams)
+				if num_distinct_exams <= 0:
+					a = 1/0
+			except:
+				print(f"{num_distinct_exams} is not a valid number. Please enter a strictly positive integer (1, 2, 3, etc.).")
+
+		num_questions_per_level = {}
+		for diff_level in df['DifficultyFromQuestioner'].unique():
+			num_questions_test = '1'
+			num_pool = len(df.loc[df['DifficultyFromQuestioner'] == diff_level])
+
+			while not(isinstance(num_questions_test, int)) or num_questions_test < 0 or num_questions_test > num_pool:
+				num_questions_test = input(f'How many {diff_level.upper()} questions do you want per exam ? (max possible : {num_pool}) ')
+				try:
+					num_questions_test = int(num_questions_test)
+					if num_questions_test < 0 or num_questions_test > num_pool:
+						a = 1/0
+				except:
+					if num_questions_test > num_pool:
+						print(f"You asked for {num_questions_test} per exam, but there are only {num_pool} {diff_level.upper()} questions in your question pool. Please enter a smaller number.")
+					else:
+						print(f"{num_questions_test} is not a valid number. Please enter a positive integer (0, 1, 10, 30, etc.).")
+
+			num_questions_per_level[diff_level] = num_questions_test
+
+
+		for id_test in range(1, num_distinct_exams+1):
+			df_test = generate_one_test(df, num_questions_per_level)
+			create_word_doc(df_test, id_test, exam_title, exam_version=True)
+			create_word_doc(df_test, id_test, exam_title, exam_version=False)
+
+			for idx_test, idx_df in enumerate(df_test.index): 
+				df.at[idx_df, f'test_{id_test}'] = idx_test+1
+
+		save_pool_with_exams(df)
